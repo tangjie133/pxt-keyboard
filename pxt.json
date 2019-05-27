@@ -11,6 +11,8 @@
         "README.md",
         "keyboard.cpp",
         "keyboard.ts",
+        "ws2812b.ts",
+        "sendBuffer.asm",
         "_locales/zh/keyboard-strings.json"
     ],
     "testFiles": [

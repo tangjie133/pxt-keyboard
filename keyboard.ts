@@ -13,36 +13,11 @@
  * @date  2018-03-20
  */
 
-/**
- * User Buttons for DFRobot gamer:bit Players.
- */
-//%
-enum GamerBitPin {
-    //% block="X button"
-    P1 = <number>DAL.MICROBIT_ID_IO_P1,
-    //% block="Y button"
-    P2 = <number>DAL.MICROBIT_ID_IO_P2,
-    //% block="D-PAD up"
-    P8 = <number>DAL.MICROBIT_ID_IO_P8,
-    //% block="D-PAD down"
-    P13 = <number>DAL.MICROBIT_ID_IO_P13,
-    //% block="D-PAD left"
-    P14 = <number>DAL.MICROBIT_ID_IO_P14,
-    //% block="D-PAD right"
-    P15 = <number>DAL.MICROBIT_ID_IO_P15,
-}
-
-/**
- * Trigger Events Proposed by DFRobot gamer:bit Players.
- */
-//%
-enum GamerBitEvent {
-    //% block="pressed"
-    Down = DAL.MICROBIT_BUTTON_EVT_DOWN,
-    //% block="released"
-    Up = DAL.MICROBIT_BUTTON_EVT_UP,
-    //% block="click"
-    Click = DAL.MICROBIT_BUTTON_EVT_CLICK,
+enum KeyMode {
+    //% block=function
+    Function = 0,
+    //% block=number
+    Number = 1
 }
 
 //%
@@ -80,7 +55,28 @@ enum KeyValue {
     //% block="key /"
     keydiv = 0x08
 }
-
+enum NeoPixelColors {
+    //% block=red
+    Red = 0xFF0000,
+    //% block=orange
+    Orange = 0xFFA500,
+    //% block=yellow
+    Yellow = 0xFFFF00,
+    //% block=green
+    Green = 0x00FF00,
+    //% block=blue
+    Blue = 0x0000FF,
+    //% block=indigo
+    Indigo = 0x4b0082,
+    //% block=violet
+    Violet = 0x8a2be2,
+    //% block=purple
+    Purple = 0xFF00FF,
+    //% block=white
+    White = 0xFFFFFF,
+    //% block=black
+    Black = 0x000000
+}
 interface KV {
     key: KeyValue;
     action: Action;
@@ -90,123 +86,249 @@ interface KV {
  */
 //% weight=10 color=#DF6721 icon="\uf11b" block="keyboard"
 namespace keyboard {
-    let PIN_INIT = 0;
-    //let kbCallback: Action = null;
-    //let kbCallback:{[key:number]:Action}={}
     let kbCallback: KV[] = []
-
-    export enum Vibrator {
-        //% blockId="V0" block="stop"
-        V0 = 0,
-        //% blockId="V1" block="Vibration"
-        V1 = 255,
+    let neopixel_buf = pins.createBuffer(16 * 3);
+    let _brightness = 255
+    let mathKeyNumber = 0
+    let mathKeyFunction = 'x'
+    for (let i = 0; i < 16 * 3; i++) {
+        neopixel_buf[i] = 0
     }
 
-    export enum Intensity {
-        //% blockId="I0" block="stop"
-        I0 = 0,
-        //% blockId="I1" block="weak"
-        I1 = 100,
-        //% blockId="I2" block="medium"
-        I2 = 180,
-        //% blockId="I3" block="strong"
-        I3 = 225
+    //% weight=94
+    //% blockId=led_range block="led range from|%from to|%to"
+    export function ledRange(from: number, to: number): number {
+        return (from << 16) + (2 << 8) + (to);
     }
 
-    export enum Led {
-        //% blockId="OFF" block="off"
-        OFF = 0,
-        //% blockId="ON" block="on"
-        ON = 1
-    }
+    //% weight=93
+    //% blockId=set_index_color block="set color index |%index|%rgb"
+    export function setIndexColor(index: number, rgb: NeoPixelColors) {
+        let f = index;
+        let t = index;
+        let r = (rgb >> 16) * (_brightness / 255);
+        let g = ((rgb >> 8) & 0xFF) * (_brightness / 255);
+        let b = ((rgb) & 0xFF) * (_brightness / 255);
 
-
-    //% shim=gamerpad::init
-    function init(): void {
-        return;
-    }
-
-    function PinInit(): void {
-        pins.setPull(DigitalPin.P1, PinPullMode.PullNone);
-        pins.setPull(DigitalPin.P2, PinPullMode.PullNone);
-        pins.setPull(DigitalPin.P8, PinPullMode.PullNone);
-        pins.setPull(DigitalPin.P13, PinPullMode.PullNone);
-        pins.setPull(DigitalPin.P14, PinPullMode.PullNone);
-        pins.setPull(DigitalPin.P15, PinPullMode.PullNone);
-        pins.setPull(DigitalPin.P0, PinPullMode.PullUp);
-        pins.setPull(DigitalPin.P16, PinPullMode.PullUp);
-        PIN_INIT = 1;
-        return;
-    }
-
-    /**
-     * To scan a button whether be triggered : return '1' if pressed; return'0' if not.
-     */
-    //% weight=70
-    //% blockId=gamePad_keyState block="button|%button|is pressed"
-    //% button.fieldEditor="gridpicker" button.fieldOptions.columns=3
-    export function keyState(button: GamerBitPin): boolean {
-        if (!PIN_INIT) {
-            PinInit();
+        if (index > 15) {
+            f = index >> 16;
+            t = index & 0xff;
         }
-        let num = false;
-        if (0 == pins.digitalReadPin(<number>button)) {
-            num = true;
+        for (let i = f; i <= t; i++) {
+            neopixel_buf[i * 3 + 0] = Math.round(g)
+            neopixel_buf[i * 3 + 1] = Math.round(r)
+            neopixel_buf[i * 3 + 2] = Math.round(b)
+            ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
         }
-        return num;
     }
 
-    /**
-     * Registers code to run when a DFRobot gamer:bit event is detected.
-     */
-    //% weight=60
-    //% blockGap=50
-    //% blockId=gamePad_onEvent block="on button|%button|is %event"
-    //% button.fieldEditor="gridpicker" button.fieldOptions.columns=3
-    //% event.fieldEditor="gridpicker" event.fieldOptions.columns=3
-    export function onEvent(button: GamerBitPin, event: GamerBitEvent, handler: Action) {
-        init();
-        if (!PIN_INIT) {
-            PinInit();
+    //% weight=92
+    //% blockId=led_rainbow block="led rainbow led from|%startLed to|%endLed color from|%startHue to|%endHue"
+    export function ledRainbow(startLed: number, endLed: number, startHue: number, endHue: number) {
+        if(startLed>endLed){
+            return
         }
-        control.onEvent(<number>button, <number>event, handler); // register handler
+        startHue = startHue >> 0;
+        endHue = endHue >> 0;
+        const saturation = 100;
+        const luminance = 50;
+        let steps = endLed-startLed+1;
+        const direction = HueInterpolationDirection.Clockwise;
+
+        //hue
+        const h1 = startHue;
+        const h2 = endHue;
+        const hDistCW = ((h2 + 360) - h1) % 360;
+        const hStepCW = Math.idiv((hDistCW * 100), steps);
+        const hDistCCW = ((h1 + 360) - h2) % 360;
+        const hStepCCW = Math.idiv(-(hDistCCW * 100), steps);
+        let hStep: number;
+        if (direction === HueInterpolationDirection.Clockwise) {
+            hStep = hStepCW;
+        } else if (direction === HueInterpolationDirection.CounterClockwise) {
+            hStep = hStepCCW;
+        } else {
+            hStep = hDistCW < hDistCCW ? hStepCW : hStepCCW;
+        }
+        const h1_100 = h1 * 100; //we multiply by 100 so we keep more accurate results while doing interpolation
+
+        //sat
+        const s1 = saturation;
+        const s2 = saturation;
+        const sDist = s2 - s1;
+        const sStep = Math.idiv(sDist, steps);
+        const s1_100 = s1 * 100;
+
+        //lum
+        const l1 = luminance;
+        const l2 = luminance;
+        const lDist = l2 - l1;
+        const lStep = Math.idiv(lDist, steps);
+        const l1_100 = l1 * 100
+        serial.writeString("h1 = ");
+        serial.writeNumber(h1);
+        serial.writeLine("");
+        serial.writeString("s1 = ");
+        serial.writeNumber(s1);
+        serial.writeLine("");
+        serial.writeString("l1 = ");
+        serial.writeNumber(l1);
+        serial.writeLine("");
+        serial.writeString("hStep = ");
+        serial.writeNumber(hStep);
+        serial.writeLine("");
+        serial.writeString("sStep = ");
+        serial.writeNumber(sStep);
+        serial.writeLine("");
+        serial.writeString("lStep = ");
+        serial.writeNumber(lStep);
+        serial.writeLine("");
+
+        serial.writeString("startHue = ");
+        serial.writeNumber(startHue);
+        serial.writeLine("");
+        serial.writeString("endHue = ");
+        serial.writeNumber(endHue);
+        serial.writeLine("");
+        serial.writeString("steps = ");
+        serial.writeNumber(steps);
+        serial.writeLine("");
+        //interpolate
+        if (steps === 1) {
+            writeBuff(startLed, hsl(h1 + hStep, s1 + sStep, l1 + lStep))
+        } else {
+            writeBuff(startLed, hsl(startHue, saturation, luminance));
+            for (let i = 1; i < steps - 1; i++) {
+                const h = Math.idiv((h1_100 + i * hStep), 100) + 360;
+                const s = Math.idiv((s1_100 + i * sStep), 100);
+                const l = Math.idiv((l1_100 + i * lStep), 100);
+                writeBuff(startLed+i, hsl(h, s, l));
+            }
+            writeBuff(endLed, hsl(endHue, saturation, luminance));
+        }
+        ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
     }
 
+    //% weight=91
+    //% blockId=show_color block="show color |%rgb"
+    export function showColor(rgb: NeoPixelColors) {
+        let r = (rgb >> 16) * (_brightness / 255);
+        let g = ((rgb >> 8) & 0xFF) * (_brightness / 255);
+        let b = ((rgb) & 0xFF) * (_brightness / 255);
+        for (let i = 0; i < 16 * 3; i++) {
+            if ((i % 3) == 0)
+                neopixel_buf[i] = Math.round(g)
+            if ((i % 3) == 1)
+                neopixel_buf[i] = Math.round(r)
+            if ((i % 3) == 2)
+                neopixel_buf[i] = Math.round(b)
+        }
+        ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
+    }
+    //% weight=97
+    //% blockId=key_math block="key(math) |%mode"
+    //export function key_math(mode:KeyMode): number {
+      //let key = key_basic();
+
+    //if(mode == KeyMode.Number)
+    //    return mathKeyNumber
+    //else
+    //    return mathKeyFunction
+    //}
+    //% weight=98
+    //% blockId=key_basic block="key(basic)"
+    export function key_basic():number {
+        let tab = [0x02,0x80,0x40,0x20,0x200,0x100,0x400,0x4000,
+             0x1000,0x2000,0x10,0x800,0x8000,0x08,0x04,0x01]
+
+        let TPval = pins.i2cReadNumber(0x57, NumberFormat.UInt16BE);
+        let key = 16;
+        for(let i=0;i<16;i++){
+            if(TPval & tab[i]){
+                key = i;
+                break;
+            }
+        }
+        return key;
+    }
+
+    //% weight=91
+    //% blockId=show_matrix_color block="show matrix pixel x|%x y|%y color|%rgb"
+    export function showMatrixColor(x:number, y:number, rgb: NeoPixelColors) {
+        let matrix=[[1,2,3,10],[4,5,6,11],[7,8,9,12],[15,0,14,13]]
+        let index = matrix[y][x]
+        writeBuff(index,rgb)
+        ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
+    }
+    function writeBuff(index:number, rgb: number) {
+        let r = (rgb >> 16) * (_brightness / 255);
+        let g = ((rgb >> 8) & 0xFF) * (_brightness / 255);
+        let b = ((rgb) & 0xFF) * (_brightness / 255);
+        neopixel_buf[index * 3 + 0] = Math.round(g)
+        neopixel_buf[index * 3 + 1] = Math.round(r)
+        neopixel_buf[index * 3 + 2] = Math.round(b)
+    }
+
+    //% weight=92
+    //% blockId=set_brightness block="set brightness |%brightness"
+    export function setBrightness(brightness: number) {
+        _brightness = brightness;
+    }
     //% weight=90
-    //% blockId=nfc_event block="key pressed |%value"
+    //% blockId=kb_event block="key pressed |%value"
     export function kbEvent(value: KeyValue, a: Action) {
         let item: KV = { key: value, action: a };
         kbCallback.push(item);
     }
-
-    /**
-     * Vibration motor speed setting, adjustable range 0~255.
-     */
-    //% weight=30
-    //% blockGap=50
-    //% blockId=gamePad_vibratorMotorSpeed block="Vibrator motor intensity|%degree"
-    //% degree.min=0 degree.max=255
-    export function vibratorMotorSpeed(degree: number): void {
-        if (!PIN_INIT) {
-            PinInit();
-        }
-        let num = degree * 4;
-        pins.analogWritePin(AnalogPin.P12, <number>num);
-        return;
+    //% weight=89
+    //% blockId=led_blank block="turn off all leds"
+    export function ledBlank() {
+        showColor(0)
     }
 
-    /**
-     * LED indicator light switch.
-     */
-    //% weight=20
-    //% blockId=gamePad_led block="LED|%index|"
-    //% index.fieldEditor="gridpicker" index.fieldOptions.columns=2
-    export function led(index: Led): void {
-        if (!PIN_INIT) {
-            PinInit();
+    function hsl(h: number, s: number, l: number): number {
+        h = Math.round(h);
+        s = Math.round(s);
+        l = Math.round(l);
+
+        h = h % 360;
+        s = Math.clamp(0, 99, s);
+        l = Math.clamp(0, 99, l);
+        let c = Math.idiv((((100 - Math.abs(2 * l - 100)) * s) << 8), 10000); //chroma, [0,255]
+        let h1 = Math.idiv(h, 60);//[0,6]
+        let h2 = Math.idiv((h - h1 * 60) * 256, 60);//[0,255]
+        let temp = Math.abs((((h1 % 2) << 8) + h2) - 256);
+        let x = (c * (256 - (temp))) >> 8;//[0,255], second largest component of this color
+        let r$: number;
+        let g$: number;
+        let b$: number;
+        if (h1 == 0) {
+            r$ = c; g$ = x; b$ = 0;
+        } else if (h1 == 1) {
+            r$ = x; g$ = c; b$ = 0;
+        } else if (h1 == 2) {
+            r$ = 0; g$ = c; b$ = x;
+        } else if (h1 == 3) {
+            r$ = 0; g$ = x; b$ = c;
+        } else if (h1 == 4) {
+            r$ = x; g$ = 0; b$ = c;
+        } else if (h1 == 5) {
+            r$ = c; g$ = 0; b$ = x;
         }
-        pins.digitalWritePin(DigitalPin.P16, <number>index);
+        let m = Math.idiv((Math.idiv((l * 2 << 8), 100) - c), 2);
+        let r = r$ + m;
+        let g = g$ + m;
+        let b = b$ + m;
+
+        return (r<<16) + (g<<8) + b;
     }
+
+    export enum HueInterpolationDirection {
+        Clockwise,
+        CounterClockwise,
+        Shortest
+    }
+
     basic.forever(() => {
         if (kbCallback != null) {
             let TPval = pins.i2cReadNumber(0x57, NumberFormat.UInt16BE);
@@ -221,6 +343,6 @@ namespace keyboard {
                 serial.writeLine("");
             }
         }
-        basic.pause(100);
+        basic.pause(1000);
     })
 }

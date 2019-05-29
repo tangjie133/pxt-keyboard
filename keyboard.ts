@@ -86,11 +86,17 @@ interface KV {
  */
 //% weight=10 color=#DF6721 icon="\uf11b" block="keyboard"
 namespace keyboard {
+    let PIN_INIT = 0;
+    //let kbCallback: Action = null;
+    //let kbCallback:{[key:number]:Action}={}
     let kbCallback: KV[] = []
     let neopixel_buf = pins.createBuffer(16 * 3);
     let _brightness = 255
-    let mathKeyNumber = 0
-    let mathKeyFunction = 'x'
+    let mathKeyNumber = -1
+    let mathKeyFunction = 'none'
+    let newKeyFlag = true
+    let prevKey = 16
+    let key = 16
     for (let i = 0; i < 16 * 3; i++) {
         neopixel_buf[i] = 0
     }
@@ -125,14 +131,14 @@ namespace keyboard {
     //% weight=92
     //% blockId=led_rainbow block="led rainbow led from|%startLed to|%endLed color from|%startHue to|%endHue"
     export function ledRainbow(startLed: number, endLed: number, startHue: number, endHue: number) {
-        if(startLed>endLed){
+        if (startLed > endLed) {
             return
         }
         startHue = startHue >> 0;
         endHue = endHue >> 0;
         const saturation = 100;
         const luminance = 50;
-        let steps = endLed-startLed+1;
+        let steps = endLed - startLed + 1;
         const direction = HueInterpolationDirection.Clockwise;
 
         //hue
@@ -202,7 +208,7 @@ namespace keyboard {
                 const h = Math.idiv((h1_100 + i * hStep), 100) + 360;
                 const s = Math.idiv((s1_100 + i * sStep), 100);
                 const l = Math.idiv((l1_100 + i * lStep), 100);
-                writeBuff(startLed+i, hsl(h, s, l));
+                writeBuff(startLed + i, hsl(h, s, l));
             }
             writeBuff(endLed, hsl(endHue, saturation, luminance));
         }
@@ -226,27 +232,49 @@ namespace keyboard {
         ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
     }
     //% weight=97
-    //% blockId=key_math block="key(math) |%mode"
-    //export function key_math(mode:KeyMode): number {
-      //let key = key_basic();
-
-    //if(mode == KeyMode.Number)
-    //    return mathKeyNumber
-    //else
-    //    return mathKeyFunction
-    //}
+    //% blockId=key_math_function block="key function(math)"
+    export function key_math_function(): string {
+        return mathKeyFunction;
+    }
     //% weight=98
+    //% blockId=key_math_number block="key number(math)"
+    export function key_math_number(): number {
+      return mathKeyNumber;
+    }
+    //% weight=99
     //% blockId=key_basic block="key(basic)"
-    export function key_basic():number {
-        let tab = [0x02,0x80,0x40,0x20,0x200,0x100,0x400,0x4000,
-             0x1000,0x2000,0x10,0x800,0x8000,0x08,0x04,0x01]
+    export function key_basic(): number {
+        let tab = [0x02, 0x80, 0x40, 0x20, 0x200, 0x100, 0x400, 0x4000,
+            0x1000, 0x2000, 0x10, 0x800, 0x8000, 0x08, 0x04, 0x01]
 
         let TPval = pins.i2cReadNumber(0x57, NumberFormat.UInt16BE);
-        let key = 16;
-        for(let i=0;i<16;i++){
-            if(TPval & tab[i]){
+        prevKey = key
+        key = 16;
+        for (let i = 0; i < 16; i++) {
+            if (TPval & tab[i]) {
                 key = i;
                 break;
+            }
+        }
+        
+        if(key > 9){
+          if(key != 16){
+              let tmp = ["+", "-", "*", "/", "=", "DF"]
+              mathKeyNumber = -1;
+              mathKeyFunction = tmp[key-10]
+          }
+        }else{
+            if ((prevKey != key) && (key != 16)) {
+                newKeyFlag = true;
+            } else {
+                newKeyFlag = false;
+            }
+            if(newKeyFlag){
+                if(mathKeyNumber == -1){
+                    mathKeyNumber = 0;
+                }
+                mathKeyNumber = mathKeyNumber*10 +key;
+                newKeyFlag = false;
             }
         }
         return key;
@@ -254,13 +282,13 @@ namespace keyboard {
 
     //% weight=91
     //% blockId=show_matrix_color block="show matrix pixel x|%x y|%y color|%rgb"
-    export function showMatrixColor(x:number, y:number, rgb: NeoPixelColors) {
-        let matrix=[[1,2,3,10],[4,5,6,11],[7,8,9,12],[15,0,14,13]]
+    export function showMatrixColor(x: number, y: number, rgb: NeoPixelColors) {
+        let matrix = [[1, 2, 3, 10], [4, 5, 6, 11], [7, 8, 9, 12], [15, 0, 14, 13]]
         let index = matrix[y][x]
-        writeBuff(index,rgb)
+        writeBuff(index, rgb)
         ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
     }
-    function writeBuff(index:number, rgb: number) {
+    function writeBuff(index: number, rgb: number) {
         let r = (rgb >> 16) * (_brightness / 255);
         let g = ((rgb >> 8) & 0xFF) * (_brightness / 255);
         let b = ((rgb) & 0xFF) * (_brightness / 255);
@@ -320,7 +348,7 @@ namespace keyboard {
         let g = g$ + m;
         let b = b$ + m;
 
-        return (r<<16) + (g<<8) + b;
+        return (r << 16) + (g << 8) + b;
     }
 
     export enum HueInterpolationDirection {
@@ -333,16 +361,14 @@ namespace keyboard {
         if (kbCallback != null) {
             let TPval = pins.i2cReadNumber(0x57, NumberFormat.UInt16BE);
             if (TPval != 0) {
+                key_basic()
                 for (let item of kbCallback) {
                     if (item.key & TPval) {
                         item.action();
                     }
                 }
-                serial.writeString("TPVal = ");
-                serial.writeNumber(TPval);
-                serial.writeLine("");
             }
         }
-        basic.pause(1000);
+        basic.pause(100);
     })
 }

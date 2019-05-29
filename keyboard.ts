@@ -129,6 +129,12 @@ namespace keyboard {
     }
 
     //% weight=92
+    //% startLed.defl=0
+    //% endLed.defl=15
+    //% startHue.defl=1
+    //% end.defl=360
+    //% startHue.shadow="colorWheelHsvPicker"
+    //% endHue.shadow="colorWheelHsvPicker"
     //% blockId=led_rainbow block="led rainbow led from|%startLed to|%endLed color from|%startHue to|%endHue"
     export function ledRainbow(startLed: number, endLed: number, startHue: number, endHue: number) {
         if (startLed > endLed) {
@@ -171,34 +177,7 @@ namespace keyboard {
         const lDist = l2 - l1;
         const lStep = Math.idiv(lDist, steps);
         const l1_100 = l1 * 100
-        serial.writeString("h1 = ");
-        serial.writeNumber(h1);
-        serial.writeLine("");
-        serial.writeString("s1 = ");
-        serial.writeNumber(s1);
-        serial.writeLine("");
-        serial.writeString("l1 = ");
-        serial.writeNumber(l1);
-        serial.writeLine("");
-        serial.writeString("hStep = ");
-        serial.writeNumber(hStep);
-        serial.writeLine("");
-        serial.writeString("sStep = ");
-        serial.writeNumber(sStep);
-        serial.writeLine("");
-        serial.writeString("lStep = ");
-        serial.writeNumber(lStep);
-        serial.writeLine("");
 
-        serial.writeString("startHue = ");
-        serial.writeNumber(startHue);
-        serial.writeLine("");
-        serial.writeString("endHue = ");
-        serial.writeNumber(endHue);
-        serial.writeLine("");
-        serial.writeString("steps = ");
-        serial.writeNumber(steps);
-        serial.writeLine("");
         //interpolate
         if (steps === 1) {
             writeBuff(startLed, hsl(h1 + hStep, s1 + sStep, l1 + lStep))
@@ -239,7 +218,7 @@ namespace keyboard {
     //% weight=98
     //% blockId=key_math_number block="key number(math)"
     export function key_math_number(): number {
-      return mathKeyNumber;
+        return mathKeyNumber;
     }
     //% weight=99
     //% blockId=key_basic block="key(basic)"
@@ -256,24 +235,24 @@ namespace keyboard {
                 break;
             }
         }
-        
-        if(key > 9){
-          if(key != 16){
-              let tmp = ["+", "-", "*", "/", "=", "DF"]
-              mathKeyNumber = -1;
-              mathKeyFunction = tmp[key-10]
-          }
-        }else{
+
+        if (key > 9) {
+            if (key != 16) {
+                let tmp = ["+", "-", "*", "/", "=", "DF"]
+                mathKeyNumber = -1;
+                mathKeyFunction = tmp[key - 10]
+            }
+        } else {
             if ((prevKey != key) && (key != 16)) {
                 newKeyFlag = true;
             } else {
                 newKeyFlag = false;
             }
-            if(newKeyFlag){
-                if(mathKeyNumber == -1){
+            if (newKeyFlag) {
+                if (mathKeyNumber == -1) {
                     mathKeyNumber = 0;
                 }
-                mathKeyNumber = mathKeyNumber*10 +key;
+                mathKeyNumber = mathKeyNumber * 10 + key;
                 newKeyFlag = false;
             }
         }

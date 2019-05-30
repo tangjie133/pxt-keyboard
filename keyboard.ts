@@ -114,6 +114,9 @@ namespace keyboard {
     }
 
     //% weight=96
+    //% from.min=0 from.max=15
+    //% to.min=0 to.max=15
+    //% to.defl = 15
     //% blockId=led_range block="led range from|%from to|%to"
     export function ledRange(from: number, to: number): number {
         return (from << 16) + (2 << 8) + (to);

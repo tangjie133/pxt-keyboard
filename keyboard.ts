@@ -115,13 +115,15 @@ namespace keyboard {
 
     //% weight=96
     //% blockId=led_range block="led range from|%from to|%to"
-    export function ledRange(from: number, to: number): number {
+    export function ledRange(from?: number, to?: number): number {
         return (from << 16) + (2 << 8) + (to);
     }
 
     //% weight=95
+    //% index.min=0 index.max=15
+    //% rgb.shadow="colorNumberPicker"
     //% blockId=set_index_color block="set color index |%index|%rgb"
-    export function setIndexColor(index: number, rgb: NeoPixelColors) {
+    export function setIndexColor(index: number, rgb: number) {
         let f = index;
         let t = index;
         let r = (rgb >> 16) * (_brightness / 255);
@@ -140,11 +142,44 @@ namespace keyboard {
         }
     }
 
-    //% weight=80
+    //% weight=79
+    //% rgb.shadow="colorNumberPicker"
+    //% blockId=show_color block="show color |%rgb"
+    export function showColor(rgb: NeoPixelColors) {
+        let r = (rgb >> 16) * (_brightness / 255);
+        let g = ((rgb >> 8) & 0xFF) * (_brightness / 255);
+        let b = ((rgb) & 0xFF) * (_brightness / 255);
+        for (let i = 0; i < 16 * 3; i++) {
+            if ((i % 3) == 0)
+                neopixel_buf[i] = Math.round(g)
+            if ((i % 3) == 1)
+                neopixel_buf[i] = Math.round(r)
+            if ((i % 3) == 2)
+                neopixel_buf[i] = Math.round(b)
+        }
+        ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
+    }
+
+    //% weight=78
+    //% blockId=set_brightness block="set brightness |%brightness"
+    export function setBrightness(brightness: number) {
+        _brightness = brightness;
+    }
+
+    //% weight=77
+    //% blockId=show_matrix_color block="show matrix pixel x|%x y|%y color|%rgb"
+    export function showMatrixColor(x: number, y: number, rgb: NeoPixelColors) {
+        let matrix = [[1, 2, 3, 10], [4, 5, 6, 11], [7, 8, 9, 12], [15, 0, 14, 13]]
+        let index = matrix[y][x]
+        writeBuff(index, rgb)
+        ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
+    }
+
+    //% weight=76
     //% startLed.defl=0
     //% endLed.defl=15
     //% startHue.defl=1
-    //% end.defl=360
+    //% endHue.defl=360
     //% startLed.min=0 startLed.max=15
     //% endLed.min=0 endLed.max=15
     //% startHue.shadow="colorWheelHsvPicker"
@@ -208,38 +243,7 @@ namespace keyboard {
         ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
     }
 
-    //% weight=79
-    //% blockId=show_color block="show color |%rgb"
-    export function showColor(rgb: NeoPixelColors) {
-        let r = (rgb >> 16) * (_brightness / 255);
-        let g = ((rgb >> 8) & 0xFF) * (_brightness / 255);
-        let b = ((rgb) & 0xFF) * (_brightness / 255);
-        for (let i = 0; i < 16 * 3; i++) {
-            if ((i % 3) == 0)
-                neopixel_buf[i] = Math.round(g)
-            if ((i % 3) == 1)
-                neopixel_buf[i] = Math.round(r)
-            if ((i % 3) == 2)
-                neopixel_buf[i] = Math.round(b)
-        }
-        ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
-    }
-
-    //% weight=78
-    //% blockId=set_brightness block="set brightness |%brightness"
-    export function setBrightness(brightness: number) {
-        _brightness = brightness;
-    }
-
-    //% weight=77
-    //% blockId=show_matrix_color block="show matrix pixel x|%x y|%y color|%rgb"
-    export function showMatrixColor(x: number, y: number, rgb: NeoPixelColors) {
-        let matrix = [[1, 2, 3, 10], [4, 5, 6, 11], [7, 8, 9, 12], [15, 0, 14, 13]]
-        let index = matrix[y][x]
-        writeBuff(index, rgb)
-        ws2812b.sendBuffer(neopixel_buf, DigitalPin.P15)
-    }
-    //% weight=76
+    //% weight=75
     //% blockId=led_blank block="turn off all leds"
     export function ledBlank() {
         showColor(0)
@@ -313,15 +317,13 @@ namespace keyboard {
     }
     //% weight=56
     //% blockId=key_pressed block="|%key is pressed?"
-    export function keyPressed(key: KeyValue):boolean {
-        if (keyRow & key){
+    export function keyPressed(key: KeyValue): boolean {
+        if (keyRow & key) {
             return true
-        }else{
+        } else {
             return false
         }
     }
-
-
 
     function hsl(h: number, s: number, l: number): number {
         h = Math.round(h);

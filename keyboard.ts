@@ -383,8 +383,8 @@ namespace keyboard {
     basic.forever(() => {
         if (kbCallback != null) {
             let TPval = pins.i2cReadNumber(0x57, NumberFormat.UInt16BE);
-            if (1) {
-                keyBasic()
+            keyBasic()
+            if (TPval != 0) {
                 for (let item of kbCallback) {
                     if (item.key & TPval) {
                         item.action();

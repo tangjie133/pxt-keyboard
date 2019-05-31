@@ -50,11 +50,12 @@ namespace keyboard {
         let buf = pins.createBuffer(3);
         if (index == 0) {
             buf[0] = 0x00;
+            buf[1] = direction;
         }
         if (index == 1) {
             buf[0] = 0x02;
+            buf[1] = 1-direction;
         }
-        buf[1] = direction;
         buf[2] = speed;
         pins.i2cWriteBuffer(address, buf);
     }
@@ -84,12 +85,12 @@ namespace keyboard {
     //% weight=18
     //% blockId=motor_motorStopAll block="Motor Stop All"
     export function motorStopAll(): void {
-        let buf = pins.createBuffer(2);
+        let buf = pins.createBuffer(3);
         buf[0] = 0x00;
         buf[1] = 0;
         buf[2] = 0;
         pins.i2cWriteBuffer(address, buf);
-        buf[0] = 0x00;
+        buf[0] = 0x02;
         pins.i2cWriteBuffer(address, buf);
     }
 
@@ -98,9 +99,11 @@ namespace keyboard {
     export function vibrationMotor(on:boolean): void {
         let buf = pins.createBuffer(2);
         buf[0] = 0x0A;
-        buf[1] = 0;
-        pins.i2cWriteBuffer(address, buf);
-        buf[0] = 0x00;
+        if(on){
+            buf[1] = 1;
+        }else{
+            buf[1] = 0;
+        }       
         pins.i2cWriteBuffer(address, buf);
     }
 }

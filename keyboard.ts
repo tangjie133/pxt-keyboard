@@ -392,6 +392,6 @@ namespace keyboard {
                 }
             }
         }
-        basic.pause(50);
+        basic.pause(20);
     })
 }

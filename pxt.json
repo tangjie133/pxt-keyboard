@@ -9,7 +9,6 @@
     },
     "files": [
         "README.md",
-        "keyboard.cpp",
         "keyboard.ts",
         "ws2812b.ts",
         "motor.ts",

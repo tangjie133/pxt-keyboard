@@ -13,28 +13,29 @@
  * @date  2018-11-16
  */
 
+/**
+ * The user selects the 4-way dc motor.
+ */
+enum Motors {
+    M1 = 0x00,
+    M2 = 0x01,
+    //% blockId="All" block="M1+M2"
+    All = 0x02
+}
+
+/**
+ * The user defines the motor rotation direction.
+ */
+enum Dir {
+    //% blockId="CW" block="CW"
+    CW = 0x00,
+    //% blockId="CCW" block="CCW"
+    CCW = 0x01
+}
 
 //% weight=10 color=#DF6721 icon="\uf013"
 namespace keyboard {
     const address = 0x10
-
-    /**
-     * The user selects the 4-way dc motor.
-     */
-    export enum Motors {
-        M1 = 0x00,
-        M2 = 0x01
-    }
-
-    /**
-     * The user defines the motor rotation direction.
-     */
-    export enum Dir {
-        //% blockId="CW" block="CW"
-        CW = 0x00,
-        //% blockId="CCW" block="CCW"
-        CCW = 0x01
-    }
 
     /**
 	 * Execute a motor
@@ -68,29 +69,17 @@ namespace keyboard {
     //% index.fieldEditor="gridpicker" index.fieldOptions.columns=1
     export function motorStop(index: Motors) {
         let buf = pins.createBuffer(3);
+        buf[1] = 0;
+        buf[2] = 0;
         if (index == 0) {
             buf[0] = 0x00;
-        }
-        if (index == 1) {
+        }else if (index == 1) {
+            buf[0] = 0x02;
+        }else{
+            buf[0] = 0x00;
+            pins.i2cWriteBuffer(address, buf);
             buf[0] = 0x02;
         }
-        buf[1] = 0;
-        buf[2] = 0;
-        pins.i2cWriteBuffer(address, buf);
-    }
-
-    /**
-	 * Stop all motors
-    */
-    //% weight=18
-    //% blockId=motor_motorStopAll block="Motor Stop All"
-    export function motorStopAll(): void {
-        let buf = pins.createBuffer(3);
-        buf[0] = 0x00;
-        buf[1] = 0;
-        buf[2] = 0;
-        pins.i2cWriteBuffer(address, buf);
-        buf[0] = 0x02;
         pins.i2cWriteBuffer(address, buf);
     }
 

@@ -33,9 +33,9 @@
     "keyboard.keyPressed|block" : "|%key 被按下?",
     "Dir.CW|block": "顺时针",
     "Dir.CCW|block": "逆时针",
+    "Motors.All|block": "所有",
     "keyboard.motorRun|block": "电机|%index|方向|%Dir|速度|%speed",
     "keyboard.motorStop|block": "电机 停止|%index",
-    "keyboard.motorStopAll|block": "停止所有电机",
     "keyboard.vibrationMotor|block": "震动电机开关 |%on",
     "keyboard.ServoRun|block": "舵机|%index|角度|%angle"    
 }

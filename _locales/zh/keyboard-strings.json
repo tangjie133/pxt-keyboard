@@ -33,6 +33,8 @@
     "keyboard.keyPressed|block": "|%key 被按下?",
     "Dir.CW|block": "顺时针",
     "Dir.CCW|block": "逆时针",
+    "OnOff.ON|block": "打开",
+    "OnOff.OFF|block": "关闭",
     "Motors.All|block": "所有",
     "keyboard.motorRun|block": "电机|%index|方向|%Dir|速度|%speed",
     "keyboard.motorStop|block": "电机 停止|%index",

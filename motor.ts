@@ -32,6 +32,15 @@ enum Dir {
     //% blockId="CCW" block="CCW"
     CCW = 0x01
 }
+/**
+ * The user defines the motor rotation direction.
+ */
+enum OnOff {
+    //% blockId="ON" block="ON"
+    ON = 0x01,
+    //% blockId="OFF" block="OFF"
+    OFF = 0x00
+}
 
 //% weight=10 color=#DF6721 icon="\uf013"
 namespace keyboard {
@@ -55,7 +64,7 @@ namespace keyboard {
         }
         if (index == 1) {
             buf[0] = 0x02;
-            buf[1] = 1-direction;
+            buf[1] = 1 - direction;
         }
         buf[2] = speed;
         pins.i2cWriteBuffer(address, buf);
@@ -73,9 +82,9 @@ namespace keyboard {
         buf[2] = 0;
         if (index == 0) {
             buf[0] = 0x00;
-        }else if (index == 1) {
+        } else if (index == 1) {
             buf[0] = 0x02;
-        }else{
+        } else {
             buf[0] = 0x00;
             pins.i2cWriteBuffer(address, buf);
             buf[0] = 0x02;
@@ -85,14 +94,14 @@ namespace keyboard {
 
     //% weight=17
     //% blockId=motor_vibrationMotor block="Vibration Motor |%on"
-    export function vibrationMotor(on:boolean): void {
+    export function vibrationMotor(on: OnOff): void {
         let buf = pins.createBuffer(2);
         buf[0] = 0x0A;
-        if(on){
+        if (on == 1) {
             buf[1] = 1;
-        }else{
+        } else {
             buf[1] = 0;
-        }       
+        }
         pins.i2cWriteBuffer(address, buf);
     }
 }
